@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Configuration de la base de données
@@ -20,11 +21,17 @@ const pool = mysql.createPool(dbConfig);
 const testConnection = async () => {
   try {
     const connection = await pool.getConnection();
-    console.log('Connexion à la base de données MySQL établie avec succès');
+    console.log('✅ Connexion à la base de données MySQL établie avec succès');
+    
+    // Test simple pour vérifier si la base est accessible
+    const [rows] = await connection.execute('SELECT 1 as test');
+    console.log('🔍 Test de requête réussi:', rows[0]);
+    
     connection.release();
     return true;
   } catch (error) {
-    console.error('Erreur de connexion à la base de données:', error.message);
+    console.error('❌ Erreur de connexion à la base de données:', error.message);
+    console.error('📋 Détails de l\'erreur:', error.code || error.errno);
     return false;
   }
 };
@@ -195,11 +202,19 @@ const createTables = async (connection) => {
 // Insertion des données par défaut uniquement si elles n'existent pas
 const insertDefaultData = async (connection) => {
   try {
+    const defaultAdminPassword = 'admin123';
+    const defaultMemberPassword = 'member123';
+
+    const adminHash = await bcrypt.hash(defaultAdminPassword, 12);
+    const memberHash = await bcrypt.hash(defaultMemberPassword, 12);
+
     // Vérifier si le super admin existe déjà
     const [existingSuperAdmin] = await connection.query(
       'SELECT id FROM users WHERE email = ? AND role = ?',
       ['admin@faithconnect.com', 'super_admin']
     );
+
+    console.log('🔍 Vérification super admin:', existingSuperAdmin.length, 'trouvé(s)');
 
     if (existingSuperAdmin.length === 0) {
       // Insertion du super administrateur par défaut
@@ -210,12 +225,30 @@ const insertDefaultData = async (connection) => {
           'Super',
           'Administrateur',
           'admin@faithconnect.com',
-          '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', // admin123
+          adminHash,
           'super_admin',
           null
         ]
       );
       console.log('👤 Super administrateur par défaut créé');
+    } else {
+      console.log('👤 Super administrateur existe déjà');
+
+      const [superAdminRow] = await connection.query(
+        'SELECT id, password_hash FROM users WHERE email = ? AND role = ? LIMIT 1',
+        ['admin@faithconnect.com', 'super_admin']
+      );
+
+      if (superAdminRow.length > 0) {
+        const matches = await bcrypt.compare(defaultAdminPassword, superAdminRow[0].password_hash);
+        if (!matches) {
+          await connection.query(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [adminHash, superAdminRow[0].id]
+          );
+          console.log('🔐 Hash du super admin mis à jour');
+        }
+      }
     }
 
     // Vérifier si l'organisation de test existe
@@ -223,6 +256,8 @@ const insertDefaultData = async (connection) => {
       'SELECT id FROM organizations WHERE name = ?',
       ['Mosquée Al-Fath']
     );
+
+    console.log('🔍 Vérification organisation:', existingOrg.length, 'trouvé(s)');
 
     let orgId;
     if (existingOrg.length === 0) {
@@ -239,9 +274,10 @@ const insertDefaultData = async (connection) => {
         ]
       );
       orgId = orgResult.insertId;
-      console.log('🏢 Organisation de test créée');
+      console.log('🏢 Organisation de test créée avec ID:', orgId);
     } else {
       orgId = existingOrg[0].id;
+      console.log('🏢 Organisation existe déjà avec ID:', orgId);
     }
 
     // Vérifier si l'admin de test existe
@@ -249,6 +285,8 @@ const insertDefaultData = async (connection) => {
       'SELECT id FROM users WHERE email = ? AND role = ?',
       ['admin@mosquee-alfath.fr', 'admin']
     );
+
+    console.log('🔍 Vérification admin:', existingAdmin.length, 'trouvé(s)');
 
     if (existingAdmin.length === 0) {
       // Exemple d'administrateur pour l'organisation de test
@@ -259,13 +297,31 @@ const insertDefaultData = async (connection) => {
           'Ahmed',
           'Benali',
           'admin@mosquee-alfath.fr',
-          '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', // admin123
+          adminHash,
           'admin',
           orgId,
           '+33 6 12 34 56 78'
         ]
       );
       console.log('👤 Administrateur de test créé');
+    } else {
+      console.log('👤 Administrateur existe déjà');
+
+      const [adminRow] = await connection.query(
+        'SELECT id, password_hash FROM users WHERE email = ? AND role = ? LIMIT 1',
+        ['admin@mosquee-alfath.fr', 'admin']
+      );
+
+      if (adminRow.length > 0) {
+        const matches = await bcrypt.compare(defaultAdminPassword, adminRow[0].password_hash);
+        if (!matches) {
+          await connection.query(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [adminHash, adminRow[0].id]
+          );
+          console.log('🔐 Hash de l\'admin mis à jour');
+        }
+      }
     }
 
     // Vérifier si le membre de test existe
@@ -273,6 +329,8 @@ const insertDefaultData = async (connection) => {
       'SELECT id FROM users WHERE email = ? AND role = ?',
       ['fatima.alami@email.com', 'member']
     );
+
+    console.log('🔍 Vérification membre:', existingMember.length, 'trouvé(s)');
 
     if (existingMember.length === 0) {
       // Exemple de membre pour l'organisation de test
@@ -283,13 +341,31 @@ const insertDefaultData = async (connection) => {
           'Fatima',
           'Alami',
           'fatima.alami@email.com',
-          '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', // member123
+          memberHash,
           'member',
           orgId,
           '+33 6 98 76 54 32'
         ]
       );
       console.log('👤 Membre de test créé');
+    } else {
+      console.log('👤 Membre existe déjà');
+
+      const [memberRow] = await connection.query(
+        'SELECT id, password_hash FROM users WHERE email = ? AND role = ? LIMIT 1',
+        ['fatima.alami@email.com', 'member']
+      );
+
+      if (memberRow.length > 0) {
+        const matches = await bcrypt.compare(defaultMemberPassword, memberRow[0].password_hash);
+        if (!matches) {
+          await connection.query(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [memberHash, memberRow[0].id]
+          );
+          console.log('🔐 Hash du membre mis à jour');
+        }
+      }
     }
 
     // Vérifier si l'événement de test existe
@@ -297,6 +373,8 @@ const insertDefaultData = async (connection) => {
       'SELECT id FROM events WHERE title = ? AND organization_id = ?',
       ['Cours d\'arabe pour débutants', orgId]
     );
+
+    console.log('🔍 Vérification événement:', existingEvent.length, 'trouvé(s)');
 
     if (existingEvent.length === 0) {
       // Récupérer l'ID de l'admin pour l'événement
@@ -321,6 +399,8 @@ const insertDefaultData = async (connection) => {
         );
         console.log('📅 Événement de test créé');
       }
+    } else {
+      console.log('📅 Événement existe déjà');
     }
 
     // Vérifier si la contribution de test existe
@@ -328,6 +408,8 @@ const insertDefaultData = async (connection) => {
       'SELECT id FROM contributions WHERE organization_id = ? AND amount = ?',
       [orgId, 50.00]
     );
+
+    console.log('🔍 Vérification contribution:', existingContribution.length, 'trouvé(s)');
 
     if (existingContribution.length === 0) {
       // Récupérer les IDs nécessaires pour la contribution
@@ -357,7 +439,16 @@ const insertDefaultData = async (connection) => {
         );
         console.log('💰 Contribution de test créée');
       }
+    } else {
+      console.log('💰 Contribution existe déjà');
     }
+
+    // Vérification finale des utilisateurs
+    const [allUsers] = await connection.query('SELECT email, role FROM users');
+    console.log('👥 Liste des utilisateurs dans la base:');
+    allUsers.forEach(user => {
+      console.log(`  - ${user.email} (${user.role})`);
+    });
 
     console.log('📊 Données par défaut vérifiées/insérées avec succès');
   } catch (error) {

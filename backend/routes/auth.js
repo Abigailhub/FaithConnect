@@ -230,6 +230,8 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     const { email, password } = req.body;
+    
+    console.log('🔍 Tentative de connexion:', { email, passwordLength: password?.length });
 
     // Recherche de l'utilisateur
     const [users] = await pool.execute(
@@ -237,7 +239,19 @@ router.post('/login', loginValidation, async (req, res) => {
       [email]
     );
 
+    console.log('👥 Utilisateurs trouvés:', users.length);
+    if (users.length > 0) {
+      console.log('📋 Détails utilisateur:', {
+        id: users[0].id,
+        email: users[0].email,
+        role: users[0].role,
+        isActive: users[0].is_active,
+        hasPasswordHash: !!users[0].password_hash
+      });
+    }
+
     if (users.length === 0) {
+      console.log('❌ Aucun utilisateur trouvé avec cet email');
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect'
@@ -247,6 +261,7 @@ router.post('/login', loginValidation, async (req, res) => {
     const user = users[0];
 
     if (!user.is_active) {
+      console.log('❌ Compte utilisateur désactivé');
       return res.status(401).json({
         success: false,
         message: 'Compte désactivé. Veuillez contacter l\'administrateur'
@@ -254,8 +269,12 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     // Vérification du mot de passe
+    console.log('🔐 Vérification du mot de passe...');
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    console.log('🔐 Résultat vérification mot de passe:', isValidPassword);
+    
     if (!isValidPassword) {
+      console.log('❌ Mot de passe incorrect');
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect'
@@ -263,6 +282,7 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     // Génération du token JWT
+    console.log('🎟️ Génération du token JWT...');
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -287,6 +307,7 @@ router.post('/login', loginValidation, async (req, res) => {
       }
     }
 
+    console.log('✅ Connexion réussie pour:', user.email);
     res.json({
       success: true,
       message: 'Connexion réussie',
@@ -303,7 +324,7 @@ router.post('/login', loginValidation, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erreur de connexion:', error);
+    console.error('❌ Erreur de connexion:', error);
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la connexion'
