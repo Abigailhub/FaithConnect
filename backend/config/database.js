@@ -165,7 +165,7 @@ const createTables = async (connection) => {
 
   // Table des groupes/sections
   await connection.query(`
-    CREATE TABLE IF NOT EXISTS groups (
+    CREATE TABLE IF NOT EXISTS \`groups\` (
       id INT AUTO_INCREMENT PRIMARY KEY,
       organization_id INT NOT NULL,
       name VARCHAR(255) NOT NULL,
@@ -187,7 +187,7 @@ const createTables = async (connection) => {
       user_id INT NOT NULL,
       role ENUM('member', 'leader') DEFAULT 'member',
       joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+      FOREIGN KEY (group_id) REFERENCES \`groups\`(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE KEY unique_group_user (group_id, user_id)
     )

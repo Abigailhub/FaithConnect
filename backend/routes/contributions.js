@@ -124,10 +124,10 @@ router.get('/', requireOrganizationAccess, [
       LEFT JOIN organizations o ON c.organization_id = o.id
       ${whereClause}
       ORDER BY c.contribution_date DESC, c.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const [contributions] = await pool.execute(query, [...params, limit, offset]);
+    const [contributions] = await pool.query(query, params);
 
     // Comptage total pour la pagination
     const countQuery = `

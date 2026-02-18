@@ -335,8 +335,11 @@ router.post('/login', loginValidation, async (req, res) => {
 // Route d'inscription (uniquement pour les super admins ou création initiale)
 router.post('/register', registerValidation, async (req, res) => {
   try {
+    console.log('📝 Données reçues pour inscription:', JSON.stringify(req.body));
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Erreurs de validation:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Données invalides',

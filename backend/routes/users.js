@@ -228,7 +228,8 @@ const updateUserValidation = [
   body('email').optional().isEmail().normalizeEmail().withMessage('Email invalide'),
   body('firstName').optional().notEmpty().trim().withMessage('Le prénom ne peut pas être vide'),
   body('lastName').optional().notEmpty().trim().withMessage('Le nom ne peut pas être vide'),
-  body('role').optional().isIn(['admin', 'member']).withMessage('Rôle invalide')
+  body('role').optional().isIn(['admin', 'member']).withMessage('Rôle invalide'),
+  body('organizationId').optional().isInt().withMessage('ID organisation invalide')
 ];
 
 // GET /api/users - Liste des utilisateurs (admin et super admin seulement)
@@ -475,7 +476,7 @@ router.put('/:id', requireResourceAccess('user'), updateUserValidation, async (r
     }
 
     const userId = req.params.id;
-    const { email, firstName, lastName, phone, role } = req.body;
+    const { email, firstName, lastName, phone, role, organizationId } = req.body;
 
     // Vérification que l'utilisateur existe
     const [existingUsers] = await pool.execute(
@@ -515,6 +516,14 @@ router.put('/:id', requireResourceAccess('user'), updateUserValidation, async (r
       });
     }
 
+    // Seuls les admins et super admins peuvent changer l'organisation
+    if (organizationId !== undefined && !['admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seul un administrateur peut attribuer une organisation'
+      });
+    }
+
     // Construction de la requête de mise à jour
     const updateFields = [];
     const updateParams = [];
@@ -538,6 +547,10 @@ router.put('/:id', requireResourceAccess('user'), updateUserValidation, async (r
     if (role !== undefined) {
       updateFields.push('role = ?');
       updateParams.push(role);
+    }
+    if (organizationId !== undefined) {
+      updateFields.push('organization_id = ?');
+      updateParams.push(organizationId);
     }
 
     if (updateFields.length === 0) {

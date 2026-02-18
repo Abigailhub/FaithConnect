@@ -11,9 +11,7 @@ const app = express();
 // Middlewares de sécurité
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3001', 'http://localhost:3000'],
+  origin: '*',
   credentials: true
 }));
 
@@ -50,6 +48,7 @@ const eventRoutes = require('./routes/events');
 const contributionRoutes = require('./routes/contributions');
 const organizationRoutes = require('./routes/organizations');
 const reportRoutes = require('./routes/reports');
+const notificationRoutes = require('./routes/notifications');
 
 // Utilisation des routes
 app.use('/api/auth', authRoutes);
@@ -58,6 +57,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/contributions', contributionRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Middleware de gestion des erreurs
 app.use((err, req, res, next) => {

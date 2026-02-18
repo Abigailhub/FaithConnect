@@ -94,17 +94,18 @@ router.get('/', requireOrganizationAccess, [
         e.max_participants, e.is_active, e.created_at,
         u.first_name as creator_first_name, u.last_name as creator_last_name,
         COUNT(DISTINCT ep.id) as participant_count,
-        COUNT(DISTINCT CASE WHEN ep.status = 'attended' THEN ep.id END) as attended_count
+        COUNT(DISTINCT CASE WHEN ep.status = 'attended' THEN ep.id END) as attended_count,
+        COUNT(DISTINCT CASE WHEN ep.user_id = ? AND ep.status = 'registered' THEN 1 END) as is_registered
       FROM events e
       LEFT JOIN users u ON e.created_by = u.id
       LEFT JOIN event_participants ep ON e.id = ep.event_id
       ${whereClause}
       GROUP BY e.id
       ORDER BY e.event_date ASC
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const [events] = await pool.execute(query, [...params, limit, offset]);
+    const [events] = await pool.query(query, [req.user.id, ...params]);
 
     // Comptage total pour la pagination
     const countQuery = `

@@ -1,0 +1,101 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+hg/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# AI Agents / Copilots
+.cursor/
+.cursorignore
+.augment/
+.bolt/
+.windsurf/
+.ai/
+.vox/
+*_CLAUDE.md
+*_claude.md
+.claude/
+!CLAUDE.md
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-version
+.pub-cache/
+.pub/
+/build/
+.fvm/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/.gradle/
+/android/app/build/
+
+# iOS build artifacts
+/ios/.symlinks/
+/ios/Pods/
+/ios/Podfile.lock
+/ios/Runner/Flutter/
+
+# Linux build artifacts
+/linux/build/
+/linux/flutter/ephemeral/
+
+# macOS build artifacts
+/macos/.dart_tool/
+/macos/Flutter/ephemeral/
+/macos/Runner/Flutter/
+
+# Environment variables
+.env
+.env.*
+.env.local
+.env.production
+
+# Code coverage
+coverage/
+
+# Testing
+coverage/
+
+# Temporary files
+tmp/
+
+# Qodo (if present in project)
+.qodo/
+
+# Android key store (if present)
+*.jks
+*.keystore
+
+# Local configuration (SDK paths, etc.)
+.local/
