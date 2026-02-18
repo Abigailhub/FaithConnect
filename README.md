@@ -9,7 +9,7 @@ Application complète pour gérer les membres, événements et contributions d'u
   - Base de données SQLite
   - Authentification JWT
 
-- **Développeur Frontend** : [TonNom](https://github.com/TonNom)
+- **Développeur Frontend** : [RafiGDM](https://github.com/RafiGDM)
   - Dashboard Next.js
   - Interface utilisateur moderne
   - Composants Shadcn/ui
